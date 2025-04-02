@@ -9,46 +9,68 @@ const moment = require('moment');
 const transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
-        user: process.env.EMAIL_USER,  // Set in .env
-        pass: process.env.EMAIL_PASS   // Set in .env
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
     }
 });
 
 async function sendReminderEmails() {
     try {
         const today = moment().format('YYYY-MM-DD');
+        console.log(`🔍 Checking for tasks due on: ${today}`);
 
         const tasks = await ReminderTask.findAll({
             where: {
                 [Op.or]: [
                     { reminderStartDate: today },
-                    { selectedReminderDates: { [Op.contains]: [today] } }
+                    { selectedReminderDates: { [Op.like]: `%${today}%` } }
                 ]
             }
         });
 
-        if (tasks.length === 0) return;
+        console.log(`📌 Found ${tasks.length} tasks for today's reminders.`);
+
+        if (tasks.length === 0) {
+            console.log("✅ No tasks need reminders right now.");
+            return;
+        }
 
         const users = await User.findAll({ attributes: ['email'] });
-        const emailList = users.map(user => user.email);
+        console.log(`👥 Found ${users.length} users to notify.`);
 
-        for (const task of tasks) {
-            const mailOptions = {
-                from: process.env.EMAIL_USER,
-                to: emailList,
-                subject: `Reminder: ${task.taskName}`,
-                text: `Don't forget! Task "${task.taskName}" is due on ${task.dueDate}.\n\nDescription: ${task.taskDescription}`
-            };
+        if (users.length === 0) {
+            console.log("⚠️ No users found in the database.");
+            return;
+        }
 
-            await transporter.sendMail(mailOptions);
-            console.log(`✅ Email sent for task: ${task.taskName}`);
+        for (const user of users) {
+            console.log(`📨 Sending emails to ${user.email}...`);
+            for (const task of tasks) {
+                console.log(`📢 Preparing email for task: ${task.taskName}`);
+
+                const mailOptions = {
+                    from: process.env.EMAIL_USER,
+                    to: user.email,
+                    subject: `Reminder: ${task.taskName}`,
+                    text: `Hello,\n\nThis is a reminder that task "${task.taskName}" is due on ${task.dueDate}.\n\nDescription: ${task.taskDescription}\n\nBest regards.`
+                };
+
+                try {
+                    await transporter.sendMail(mailOptions);
+                    console.log(`✅ Email successfully sent to ${user.email} for task: ${task.taskName}`);
+                } catch (error) {
+                    console.error(`❌ Failed to send email to ${user.email}:`, error);
+                }
+            }
         }
     } catch (error) {
-        console.error('❌ Error sending reminders:', error);
+        console.error('❌ Error in sending reminder emails:', error);
     }
 }
 
-// Schedule the job to run every day at 9 AM
-cron.schedule('38 12 * * *', sendReminderEmails);
+// 🔥 Run When the Job is Triggered
+sendReminderEmails();
+
+console.log("⏳ Email reminder job initialized. It will send emails whenever it runs.");
 
 module.exports = { sendReminderEmails };
