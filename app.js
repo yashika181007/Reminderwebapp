@@ -4,7 +4,7 @@ const MySQLStore = require('express-mysql-session')(session);
 const flash = require('connect-flash');
 const path = require('path');
 require('dotenv').config();
-const db = require('./config/database'); // Sequelize instance
+const db = require('./config/database');
 const authRoutes = require('./routes/authRoutes');
 const categoryRoutes = require('./routes/categoryRoutes');
 const reminderTaskRoutes = require('./routes/reminderTaskRoutes');

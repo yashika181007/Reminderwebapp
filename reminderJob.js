@@ -49,6 +49,6 @@ async function sendReminderEmails() {
 }
 
 // Schedule the job to run every day at 9 AM
-cron.schedule('0 9 * * *', sendReminderEmails);
+cron.schedule('38 12 * * *', sendReminderEmails);
 
 module.exports = { sendReminderEmails };
