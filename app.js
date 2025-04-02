@@ -19,6 +19,7 @@ const sessionStore = new MySQLStore({
     database: process.env.DB_NAME || 'u510451310_Reminderwebapp'
 });
 require('./reminderJob');
+
 const reminderRoutes = require('./routes/reminderRoutes');
 app.use(reminderRoutes);
 
