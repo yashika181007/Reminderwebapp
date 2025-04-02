@@ -1,7 +1,8 @@
 require('dotenv').config();
 const cron = require('node-cron');
 const twilio = require('twilio');
-const { Op } = require('sequelize');
+const { Op } = require('sequelize');  // ✅ Added Op import
+const sequelize = require('./config/database');
 const ReminderTask = require('./models/ReminderTask');
 const User = require('./models/User');
 
@@ -9,19 +10,20 @@ const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TO
 
 const sendReminderSMS = async () => {
     try {
-        const today = new Date().toISOString().split('T')[0];
+        const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
+        console.log(`📅 Checking reminders for: ${today}`);
 
         // Find tasks where today matches either reminderStartDate or selectedReminderDates
         const tasks = await ReminderTask.findAll({
             where: {
                 [Op.or]: [
                     { reminderStartDate: today },
-                    { selectedReminderDates: { [Op.like]: `%${today}%` } }
+                    sequelize.literal(`JSON_CONTAINS(selectedReminderDates, '"${today}"')`)
                 ]
             }
         });
 
-        if (tasks.length === 0) {
+        if (!tasks.length) {
             console.log("✅ No reminders for today.");
             return;
         }
@@ -29,7 +31,7 @@ const sendReminderSMS = async () => {
         // Fetch all users with phone numbers
         const users = await User.findAll({ attributes: ['phone_number'] });
 
-        if (users.length === 0) {
+        if (!users.length) {
             console.log("❌ No users found with phone numbers.");
             return;
         }
@@ -38,7 +40,7 @@ const sendReminderSMS = async () => {
             for (const user of users) {
                 if (user.phone_number) {
                     const message = `📌 Reminder: Task "${task.taskName}" is scheduled for today!`;
-                    
+
                     await client.messages.create({
                         body: message,
                         from: process.env.TWILIO_PHONE_NUMBER,
@@ -54,10 +56,8 @@ const sendReminderSMS = async () => {
     }
 };
 
-// Schedule the job to run every day at 9 AM
-cron.schedule('40 16 * * *', sendReminderSMS);
-
-
+// ⏳ Schedule the job to run daily at 9 AM IST (3:30 AM UTC)
+cron.schedule('5 11 * * *', sendReminderSMS);
 
 
 console.log("⏳ Reminder scheduler started...");
