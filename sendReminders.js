@@ -55,6 +55,7 @@ const sendReminderSMS = async () => {
 };
 
 // Schedule the job to run every day at 9 AM
-cron.schedule('0 9 * * *', sendReminderSMS);
+cron.schedule('20 15 * * *', sendReminderSMS);
+
 
 console.log("⏳ Reminder scheduler started...");
