@@ -3,8 +3,7 @@
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {
-    "start": "npx pm2 start app.js",
-    "start:reminders": "npx pm2 start sendReminders.js"
+    "start": "npx pm2 start app.js && npx pm2 start sendReminders.js"
   },
   "keywords": [],
   "author": "",
