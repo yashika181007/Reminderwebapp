@@ -22,6 +22,7 @@ require('./sendReminders');
 require('./reminderJob');
 const reminderRoutes = require('./routes/reminderRoutes');
 app.use(reminderRoutes);
+await sequelize.sync({ alter: false });
 
 app.use(session({
     secret: process.env.SECRET || 'mysecret',
