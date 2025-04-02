@@ -23,7 +23,12 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(flash());
 app.set('view engine', 'ejs');
 app.use(express.json());
-
+const sessionStore = new MySQLStore({
+    host: process.env.DB_HOST || 'srv871.hstgr.io',
+    user: process.env.DB_USER || 'u510451310_Reminderwebapp',
+    password: process.env.DB_PASS || 'U510451310_Reminderwebapp',
+    database: process.env.DB_NAME || 'u510451310_Reminderwebapp'
+});
 // Middleware for session data in templates
 app.use(session({
     secret: process.env.SECRET || 'mysecret',
