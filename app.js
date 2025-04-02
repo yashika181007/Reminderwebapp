@@ -18,8 +18,8 @@ const sessionStore = new MySQLStore({
     password: process.env.DB_PASS || 'U510451310_Reminderwebapp',
     database: process.env.DB_NAME || 'u510451310_Reminderwebapp'
 });
+require('./sendReminders');
 require('./reminderJob');
-
 const reminderRoutes = require('./routes/reminderRoutes');
 app.use(reminderRoutes);
 
