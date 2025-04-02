@@ -1,5 +1,5 @@
 const express = require('express');
-const { sendReminderEmails } = require('../jobs/reminderJob');
+const { sendReminderEmails } = require('../reminderJob');
 
 const router = express.Router();
 
