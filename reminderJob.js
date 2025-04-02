@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const nodemailer = require('nodemailer');
-const ReminderTask = require('../models/ReminderTask');
+const ReminderTask = require('./models/ReminderTask'); 
 const User = require('../models/User');
 const { Op } = require('sequelize');
 const moment = require('moment');
