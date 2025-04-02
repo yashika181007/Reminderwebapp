@@ -1,0 +1,42 @@
+<%- include('partials/header.ejs') %>
+<%- include('partials/sidebar.ejs') %>
+
+
+<main id="main" class="main">
+
+    <div class="pagetitle">
+        <h1>Dashboard</h1>
+        <nav>
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+                <li class="breadcrumb-item active">Home</li>
+            </ol>
+        </nav>
+    </div>
+    <!-- End Page Title -->
+
+    <div class="container mt-3">
+        <% if (success && success.length > 0) { %>
+            <div class="alert alert-success">
+                <%= success[0] %>
+            </div>
+        <% } %>
+
+        <% if (error && error.length > 0) { %>
+            <div class="alert alert-danger">
+                <%= error[0] %>
+            </div>
+        <% } %>
+
+        <% if (user) { %>
+            <h2>Welcome, <%= user.username %>!</h2>
+            <p>This is your dashboard.</p>
+        <% } else { %>
+            <h2>Welcome, Guest!</h2>
+            <p>Please log in to access the dashboard.</p>
+        <% } %>
+    </div>
+
+</main>
+
+<%- include('partials/footer.ejs') %>

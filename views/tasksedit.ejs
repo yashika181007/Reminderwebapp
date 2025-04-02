@@ -1,0 +1,89 @@
+<%- include('partials/header.ejs') %>
+<%- include('partials/sidebar.ejs') %>
+
+<main id="main" class="main">
+  <div class="pagetitle">
+    <h1>Edit Task</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/dashboard">Dashboard</a></li>
+        <li class="breadcrumb-item"><a href="/taskslist">Tasks List</a></li>
+        <li class="breadcrumb-item active">Edit Task</li>
+      </ol>
+    </nav>
+  </div>
+
+  <section class="section">
+    <div class="row">
+      <div class="col-lg-12">
+        <% if (success && success.trim().length > 0) { %>
+          <div class="alert alert-success"><%= success %></div>
+        <% } %>
+        
+        <% if (error && error.trim().length > 0) { %>
+          <div class="alert alert-danger"><%= error %></div>
+        <% } %>
+        
+
+        <div class="card">
+          <div class="card-body">
+            <h5 class="card-title">Edit Task</h5>
+
+            <form action="/updatetask/<%= task.id %>" method="POST">
+              <div class="mb-3">
+                <label class="form-label">Category</label>
+                <select class="form-control" name="categoryId" required>
+                  <% categories.forEach(category => { %>
+                  <option value="<%= category.id %>" <%= task.categoryId == category.id ? 'selected' : '' %>><%= category.name %></option>
+                  <% }) %>
+                </select>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Task Name</label>
+                <input type="text" class="form-control" name="taskName" value="<%= task.taskName %>" required>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Task Description</label>
+                <textarea class="form-control" name="taskDescription"><%= task.taskDescription %></textarea>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Due Date</label>
+                <input type="date" class="form-control" name="dueDate" value="<%= task.dueDate %>" required>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Reminder Start Date</label>
+                <input type="date" class="form-control" name="reminderStartDate" value="<%= task.reminderStartDate %>" required>
+              </div>
+
+              <div class="mb-3">
+                <label class="form-label">Selected Reminder Dates (comma-separated)</label>
+                <textarea class="form-control" name="selectedReminderDates" required>
+                    <%= task.selectedReminderDates ? JSON.parse(task.selectedReminderDates).join(', ') : '' %>
+                  </textarea>
+
+                <script>
+                  document.querySelector('form').addEventListener('submit', function(event) {
+                    let textarea = document.querySelector('textarea[name="selectedReminderDates"]');
+                    let datesArray = textarea.value.split(',').map(date => date.trim()); // Convert to array
+                    textarea.value = JSON.stringify(datesArray); // Convert to JSON string
+                  });
+                </script>
+
+              </div>
+
+
+              <button type="submit" class="btn btn-primary">Update Task</button>
+              <a href="/taskslist" class="btn btn-secondary">Cancel</a>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<%- include('partials/footer.ejs') %>

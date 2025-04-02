@@ -1,0 +1,73 @@
+<%- include('partials/header.ejs') %>
+<%- include('partials/sidebar.ejs') %>
+
+<main id="main" class="main">
+
+  <div class="pagetitle">
+    <h1>category</h1>
+    <nav>
+      <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="dashboard.php">Dashboard</a></li>
+        <li class="breadcrumb-item active">Categories Update</li>
+      </ol>
+    </nav>
+  </div><!-- End Page Title -->
+
+  <section class="section">
+    <div class="row">
+
+
+      <div class="col-lg-12">
+        <% if (success) { %>
+          <div class="alert alert-success"><%= success %></div>
+        <% } %>
+
+        <% if (error) { %>
+          <div class="alert alert-danger"><%= error %></div>
+        <% } %>
+        <div class="card">
+
+          <div class="card-body">
+            <h5 class="card-title">Add category here!</h5>
+
+
+            <form class="row g-3 needs-validation" action="/categoriesedit/<%= category.id %>"  method="post" novalidate>
+              <div class="row mb-3">
+                <label for="inputText" class="col-sm-2 col-form-label">Name</label>
+                <div class="col-sm-10">
+                  <input type="text" class="form-control" name="name"   value="<%= category.name %>" required>
+                  <div class="valid-feedback">
+                    Looks good!
+                  </div>
+                  <div class="invalid-feedback">
+                    Please provide a valid name.
+                  </div>
+                </div>
+              </div>
+              <div class="row mb-3">
+                <label for="inputText" class="col-sm-2 col-form-label">Description</label>
+                <div class="col-sm-10">
+                  <textarea name="description" class="form-control" required><%= category.description %></textarea>
+                  <div class="valid-feedback">
+                    Looks good!
+                  </div>
+                  <div class="invalid-feedback">
+                    Please provide a valid description.
+                  </div>
+                </div>
+              </div>
+
+              <div class="text-center">
+                <button type="submit" class="btn btn-primary" name="addcategory">Update Category</button>
+                <button type="reset" class="btn btn-secondary">Reset</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main><!-- End #main -->
+
+<%- include('partials/footer.ejs') %>
