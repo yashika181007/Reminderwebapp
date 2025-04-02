@@ -19,6 +19,7 @@
     "express-session": "^1.18.1",
     "mysql2": "^3.13.0",
     "node-cron": "^3.0.3",
+    "nodemailer": "^6.10.0",
     "pm2": "^6.0.5",
     "sequelize": "^6.37.7",
     "twilio": "^5.5.1"

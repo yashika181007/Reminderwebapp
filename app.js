@@ -18,6 +18,7 @@ const sessionStore = new MySQLStore({
     password: process.env.DB_PASS || 'U510451310_Reminderwebapp',
     database: process.env.DB_NAME || 'u510451310_Reminderwebapp'
 });
+require('./jobs/reminderJob');
 
 app.use(session({
     secret: process.env.SECRET || 'mysecret',
