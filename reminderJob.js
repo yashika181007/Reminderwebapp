@@ -1,10 +1,9 @@
 const cron = require('node-cron');
 const nodemailer = require('nodemailer');
 const ReminderTask = require('./models/ReminderTask'); 
+const User = require('./models/User');
 const { Op } = require('sequelize');
 const moment = require('moment');
-
-console.log("🚀 Initializing email reminder service...");
 
 // Configure Nodemailer
 const transporter = nodemailer.createTransport({
@@ -15,27 +14,11 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-console.log("📧 Nodemailer configured successfully.");
-
-async function sendReminderEmails(req) {
+async function sendReminderEmails() {
     try {
-        console.log("🔍 Checking user session...");
-        if (!req.session.user) {
-            console.log("⚠️ No logged-in user session found.");
-            return;
-        }
-
-        const userEmail = req.session.user.email;
-        console.log(`👤 Logged-in user email: ${userEmail}`);
-        if (!userEmail) {
-            console.log("⚠️ No email found in session.");
-            return;
-        }
-
         const today = moment().format('YYYY-MM-DD');
-        console.log(`📆 Today's date: ${today}`);
+        console.log(`🔍 Checking for tasks due on: ${today}`);
 
-        console.log("🔍 Fetching reminder tasks...");
         const tasks = await ReminderTask.findAll({
             where: {
                 [Op.or]: [
@@ -44,7 +27,7 @@ async function sendReminderEmails(req) {
                 ]
             }
         });
-        
+
         console.log(`📌 Found ${tasks.length} tasks for today's reminders.`);
 
         if (tasks.length === 0) {
@@ -52,34 +35,41 @@ async function sendReminderEmails(req) {
             return;
         }
 
-        for (const task of tasks) {
-            console.log(`📢 Preparing email for task: ${task.taskName}`);
+        const users = await User.findAll({ attributes: ['username'] });
+        console.log(`👥 Found ${users.length} users to notify.`);
 
-            const mailOptions = {
-                from: process.env.EMAIL_USER,
-                to: userEmail, // Using session-based email
-                subject: `Reminder: ${task.taskName}`,
-                text: `Hello,
+        if (users.length === 0) {
+            console.log("⚠️ No users found in the database.");
+            return;
+        }
 
-This is a reminder that task "${task.taskName}" is due on ${task.dueDate}.
+        for (const user of users) {
+            console.log(`📨 Sending emails to ${user.username}...`);
+            for (const task of tasks) {
+                console.log(`📢 Preparing email for task: ${task.taskName}`);
 
-Description: ${task.taskDescription}
+                const mailOptions = {
+                    from: process.env.EMAIL_USER,
+                    to: user.username,
+                    subject: `Reminder: ${task.taskName}`,
+                    text: `Hello,\n\nThis is a reminder that task "${task.taskName}" is due on ${task.dueDate}.\n\nDescription: ${task.taskDescription}\n\nBest regards.`
+                };
 
-Best regards.`
-            };
-            
-            console.log(`📨 Sending email to ${userEmail}...`);
-            try {
-                await transporter.sendMail(mailOptions);
-                console.log(`✅ Email successfully sent to ${userEmail} for task: ${task.taskName}`);
-            } catch (error) {
-                console.error(`❌ Failed to send email to ${userEmail}:`, error);
+                try {
+                    await transporter.sendMail(mailOptions);
+                    console.log(`✅ Email successfully sent to ${user.username} for task: ${task.taskName}`);
+                } catch (error) {
+                    console.error(`❌ Failed to send email to ${user.username}:`, error);
+                }
             }
         }
     } catch (error) {
         console.error('❌ Error in sending reminder emails:', error);
     }
 }
+
+// 🔥 Run When the Job is Triggered
+sendReminderEmails();
 
 console.log("⏳ Email reminder job initialized. It will send emails whenever it runs.");
 
