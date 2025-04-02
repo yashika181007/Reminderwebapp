@@ -25,7 +25,19 @@ app.set('view engine', 'ejs');
 app.use(express.json());
 
 // Middleware for session data in templates
+app.use(session({
+    secret: process.env.SECRET || 'mysecret',
+    resave: false,
+    saveUninitialized: false,
+    store: sessionStore,  // ✅ Store sessions in MySQL
+    cookie: { secure: false, httpOnly: true, maxAge: 1000 * 60 * 60 } // 1 hour
+}));
+
+// Ensure session is available before using it
 app.use((req, res, next) => {
+    if (!req.session) {
+        return next(new Error('Session not initialized'));
+    }
     res.locals.user = req.session.user || null;
     res.locals.success = req.flash('success') || [];
     res.locals.error = req.flash('error') || [];
