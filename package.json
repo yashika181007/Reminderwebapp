@@ -2,12 +2,10 @@
   "name": "admin-panel",
   "version": "1.0.0",
   "main": "index.js",
-  "scripts": {
-    "start": "pm2 start app.js && pm2 start sendReminders.js",
-    "stop": "pm2 stop all",
-    "restart": "pm2 restart all",
-    "logs": "pm2 logs"
-  },
+"scripts": {
+  "start": "npx pm2 start app.js",
+  "start:reminders": "npx pm2 start sendReminders.js"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
