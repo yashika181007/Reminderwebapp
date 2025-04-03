@@ -21,12 +21,13 @@ async function sendReminderEmails() {
         const today = moment().format('YYYY-MM-DD');
         console.log(`🔍 Checking for tasks due on: ${today}`);
 
-        // Fetch tasks
+        // Fetch tasks with corrected SQL query
         const tasks = await ReminderTask.sequelize.query(
             `SELECT id, taskName, taskDescription, dueDate FROM ReminderTasks WHERE reminderStartDate = CURDATE()
              UNION 
              SELECT id, taskName, taskDescription, dueDate FROM ReminderTasks
-             WHERE JSON_CONTAINS(selectedReminderDates, JSON_QUOTE(CURDATE()), '$')`,
+             JOIN JSON_TABLE(selectedReminderDates, '$[*]' COLUMNS(value DATE PATH '$')) AS temp 
+             ON temp.value = CURDATE()`,
             { type: QueryTypes.SELECT }
         );
 
@@ -75,9 +76,9 @@ async function sendReminderEmails() {
     }
 }
 
-// Schedule the job to run at 11:60 PM every day
-cron.schedule('60 23 * * *', async () => {
-    console.log("⏳ Running scheduled email reminders at 11:60 PM...");
+// Schedule the job to run at 11:59 PM every day
+cron.schedule('59 23 * * *', async () => {
+    console.log("⏳ Running scheduled email reminders at 11:59 PM...");
     await sendReminderEmails();
     console.log("✅ Reminder email function executed after cron job.");
 });
@@ -85,6 +86,6 @@ cron.schedule('60 23 * * *', async () => {
 // Manually trigger function for debugging
 sendReminderEmails();
 
-console.log("✅ Email reminder job scheduled to run every day at 11:60 PM.");
+console.log("✅ Email reminder job scheduled to run every day at 11:59 PM.");
 
 module.exports = { sendReminderEmails };
