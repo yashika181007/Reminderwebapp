@@ -15,10 +15,13 @@ const transporter = nodemailer.createTransport({
 });
 
 async function sendReminderEmails() {
+    console.log("🚀 Function `sendReminderEmails` started execution.");
+
     try {
         const today = moment().format('YYYY-MM-DD');
         console.log(`🔍 Checking for tasks due on: ${today}`);
 
+        // Fetch tasks
         const tasks = await ReminderTask.sequelize.query(
             `SELECT id, taskName, taskDescription, dueDate FROM ReminderTasks WHERE reminderStartDate = CURDATE()
              UNION 
@@ -64,21 +67,24 @@ async function sendReminderEmails() {
                 }
             }
         }
+
+        console.log("✅ Reminder email function executed successfully.");
+
     } catch (error) {
         console.error('❌ Error in sending reminder emails:', error);
     }
 }
 
-// Schedule the job to run at 11:50 PM every day
-cron.schedule('50 23 * * *', async () => {
-    console.log("⏳ Running scheduled email reminders at 11:50 PM...");
+// Schedule the job to run at 11:60 PM every day
+cron.schedule('60 23 * * *', async () => {
+    console.log("⏳ Running scheduled email reminders at 11:60 PM...");
     await sendReminderEmails();
-    console.log("✅ Reminder email function executed.");
+    console.log("✅ Reminder email function executed after cron job.");
 });
 
 // Manually trigger function for debugging
 sendReminderEmails();
 
-console.log("✅ Email reminder job scheduled to run every day at 11:50 PM.");
+console.log("✅ Email reminder job scheduled to run every day at 11:60 PM.");
 
 module.exports = { sendReminderEmails };
