@@ -1,6 +1,6 @@
 const cron = require('node-cron');
 const nodemailer = require('nodemailer');
-const { Sequelize } = require('sequelize');
+const { Sequelize, QueryTypes } = require('sequelize');
 const ReminderTask = require('./models/ReminderTask');
 const User = require('./models/User');
 const moment = require('moment');
@@ -19,15 +19,13 @@ async function sendReminderEmails() {
         const today = moment().format('YYYY-MM-DD');
         console.log(`🔍 Checking for tasks due on: ${today}`);
 
-        // Correct query to fetch reminders
-        const tasks = await ReminderTask.sequelize.query(`
-            SELECT * FROM ReminderTasks
-            WHERE reminderStartDate = CURDATE()
-            UNION 
-            SELECT * FROM ReminderTasks, 
-            JSON_TABLE(selectedReminderDates, '$[*]' COLUMNS(value VARCHAR(50) PATH '$')) temp 
-            WHERE value = CURDATE();
-        `, { model: ReminderTask });
+        const tasks = await ReminderTask.sequelize.query(
+            `SELECT id, taskName, taskDescription, dueDate FROM ReminderTasks WHERE reminderStartDate = CURDATE()
+             UNION 
+             SELECT id, taskName, taskDescription, dueDate FROM ReminderTasks
+             WHERE JSON_CONTAINS(selectedReminderDates, JSON_QUOTE(CURDATE()), '$')`,
+            { type: QueryTypes.SELECT }
+        );
 
         console.log(`📌 Found ${tasks.length} tasks for today's reminders.`);
 
