@@ -1,63 +1,79 @@
-require('dotenv').config();
 const cron = require('node-cron');
-const twilio = require('twilio');
-const { Op } = require('sequelize');  // ✅ Added Op import
-const sequelize = require('./config/database');
-const ReminderTask = require('./models/ReminderTask');
+const nodemailer = require('nodemailer');
+const ReminderTask = require('./models/ReminderTask'); 
 const User = require('./models/User');
+const { Op } = require('sequelize');
+const moment = require('moment');
 
-const client = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+// Configure Nodemailer
+const transporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASS
+    }
+});
 
-const sendReminderSMS = async () => {
+async function sendReminderEmails() {
     try {
-        const today = new Date().toISOString().split('T')[0]; // Format: YYYY-MM-DD
-        console.log(`📅 Checking reminders for: ${today}`);
+        const today = moment().format('YYYY-MM-DD');
+        console.log(`🔍 Checking for tasks due on: ${today}`);
 
-        // Find tasks where today matches either reminderStartDate or selectedReminderDates
         const tasks = await ReminderTask.findAll({
             where: {
                 [Op.or]: [
                     { reminderStartDate: today },
-                    sequelize.literal(`JSON_CONTAINS(selectedReminderDates, '"${today}"')`)
+                    { selectedReminderDates: { [Op.like]: `%${today}%` } }
                 ]
             }
         });
 
-        if (!tasks.length) {
-            console.log("✅ No reminders for today.");
+        console.log(`📌 Found ${tasks.length} tasks for today's reminders.`);
+
+        if (tasks.length === 0) {
+            console.log("✅ No tasks need reminders right now.");
             return;
         }
 
-        // Fetch all users with phone numbers
-        const users = await User.findAll({ attributes: ['phone_number'] });
+        const users = await User.findAll({ attributes: ['username'] });
+        console.log(`👥 Found ${users.length} users to notify.`);
 
-        if (!users.length) {
-            console.log("❌ No users found with phone numbers.");
+        if (users.length === 0) {
+            console.log("⚠️ No users found in the database.");
             return;
         }
 
-        for (const task of tasks) {
-            for (const user of users) {
-                if (user.phone_number) {
-                    const message = `📌 Reminder: Task "${task.taskName}" is scheduled for today!`;
+        for (const user of users) {
+            console.log(`📨 Sending emails to ${user.username}...`);
+            for (const task of tasks) {
+                console.log(`📢 Preparing email for task: ${task.taskName}`);
 
-                    await client.messages.create({
-                        body: message,
-                        from: process.env.TWILIO_PHONE_NUMBER,
-                        to: user.phone_number
-                    });
+                const mailOptions = {
+                    from: process.env.EMAIL_USER,
+                    to: user.username,
+                    subject: `Reminder: ${task.taskName}`,
+                    text: `Hello,\n\nThis is a reminder that task "${task.taskName}" is due on ${task.dueDate}.\n\nDescription: ${task.taskDescription}\n\nBest regards.`
+                };
 
-                    console.log(`✅ Reminder sent to ${user.phone_number} for task: ${task.taskName}`);
+                try {
+                    await transporter.sendMail(mailOptions);
+                    console.log(`✅ Email successfully sent to ${user.username} for task: ${task.taskName}`);
+                } catch (error) {
+                    console.error(`❌ Failed to send email to ${user.username}:`, error);
                 }
             }
         }
     } catch (error) {
-        console.error("❌ Error sending reminders:", error);
+        console.error('❌ Error in sending reminder emails:', error);
     }
-};
+}
 
-// ⏳ Schedule the job to run daily at 9 AM IST (3:30 AM UTC)
-cron.schedule('5 11 * * *', sendReminderSMS);
+// Schedule the job to run at 11 PM every day
+cron.schedule('0 23 * * *', async () => {
+    console.log("⏳ Running scheduled email reminders at 11 PM...");
+    await sendReminderEmails();
+});
 
+console.log("✅ Email reminder job scheduled to run every day at 11 PM.");
 
-console.log("⏳ Reminder scheduler started...");
+module.exports = { sendReminderEmails };
