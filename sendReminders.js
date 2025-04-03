@@ -1,9 +1,10 @@
 const cron = require('node-cron');
 const nodemailer = require('nodemailer');
-const { Op, Sequelize } = require('sequelize');
-const ReminderTask = require('./models/ReminderTask');
+const ReminderTask = require('./models/ReminderTask'); 
 const User = require('./models/User');
+const { Op, Sequelize } = require('sequelize');
 const moment = require('moment');
+require('dotenv').config();
 
 // Configure Nodemailer
 const transporter = nodemailer.createTransport({
@@ -17,16 +18,18 @@ const transporter = nodemailer.createTransport({
 async function sendReminderEmails() {
     try {
         const today = moment().format('YYYY-MM-DD');
+        console.log(`🔍 Checking for tasks due on: ${today}`);
 
+        // Fetch tasks where today matches either reminderStartDate or selectedReminderDates
         const tasks = await ReminderTask.findAll({
-            where: {
-                [Op.or]: [
-                    { reminderStartDate: today },
-                    Sequelize.literal(`JSON_CONTAINS(selectedReminderDates, '"${today}"')`)
-                ]
-            }
+            where: Sequelize.literal(`
+                reminderStartDate = '${today}' 
+                OR EXISTS (
+                    SELECT 1 FROM JSON_TABLE(selectedReminderDates, '$[*]' COLUMNS(value VARCHAR(50) PATH '$')) temp
+                    WHERE temp.value = '${today}'
+                )
+            `)
         });
-
 
         console.log(`📌 Found ${tasks.length} tasks for today's reminders.`);
 
@@ -35,6 +38,7 @@ async function sendReminderEmails() {
             return;
         }
 
+        // Fetch all users
         const users = await User.findAll({ attributes: ['username'] });
         console.log(`👥 Found ${users.length} users to notify.`);
 
@@ -43,6 +47,7 @@ async function sendReminderEmails() {
             return;
         }
 
+        // Send emails to all users
         for (const user of users) {
             console.log(`📨 Sending emails to ${user.username}...`);
             for (const task of tasks) {
@@ -68,10 +73,10 @@ async function sendReminderEmails() {
     }
 }
 
-// Schedule the job to run at **11:30 PM daily**
-cron.schedule('30 23 * * *', async () => {
-    console.log("⏳ Running scheduled email reminders at 11:30 PM...");
-    await sendReminderEmails();
+// Schedule the job to run at 11:30 PM every day
+cron.schedule('30 23 * * *', () => {
+    console.log("⏳ Running scheduled email job at 11:30 PM...");
+    sendReminderEmails();
 });
 
 console.log("✅ Email reminder job scheduled to run every day at 11:30 PM.");
