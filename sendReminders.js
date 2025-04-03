@@ -23,13 +23,13 @@ async function sendReminderEmails() {
         // Fetch tasks where today matches either reminderStartDate or selectedReminderDates
         const tasks = await ReminderTask.findAll({
             where: Sequelize.literal(`
-                reminderStartDate = '${today}' 
+                reminderStartDate = CURDATE()
                 OR EXISTS (
                     SELECT 1 FROM JSON_TABLE(selectedReminderDates, '$[*]' COLUMNS(value VARCHAR(50) PATH '$')) temp
-                    WHERE temp.value = '${today}'
+                    WHERE temp.value = CURDATE()
                 )
             `)
-        });
+        });        
 
         console.log(`📌 Found ${tasks.length} tasks for today's reminders.`);
 
