@@ -1,8 +1,8 @@
 const cron = require('node-cron');
 const nodemailer = require('nodemailer');
-const ReminderTask = require('./models/ReminderTask'); 
+const { Sequelize } = require('sequelize');
+const ReminderTask = require('./models/ReminderTask');
 const User = require('./models/User');
-const { Op } = require('sequelize');
 const moment = require('moment');
 
 // Configure Nodemailer
@@ -19,15 +19,15 @@ async function sendReminderEmails() {
         const today = moment().format('YYYY-MM-DD');
         console.log(`🔍 Checking for tasks due on: ${today}`);
 
-        const tasks = await ReminderTask.findAll({
-            where: Sequelize.literal(`
-                reminderStartDate = CURDATE()
-                OR EXISTS (
-                    SELECT 1 FROM JSON_TABLE(selectedReminderDates, '$[*]' COLUMNS(value VARCHAR(50) PATH '$')) temp
-                    WHERE temp.value = CURDATE()
-                )
-            `)
-        });      
+        // Correct query to fetch reminders
+        const tasks = await ReminderTask.sequelize.query(`
+            SELECT * FROM ReminderTasks
+            WHERE reminderStartDate = CURDATE()
+            UNION 
+            SELECT * FROM ReminderTasks, 
+            JSON_TABLE(selectedReminderDates, '$[*]' COLUMNS(value VARCHAR(50) PATH '$')) temp 
+            WHERE value = CURDATE();
+        `, { model: ReminderTask });
 
         console.log(`📌 Found ${tasks.length} tasks for today's reminders.`);
 
@@ -36,6 +36,7 @@ async function sendReminderEmails() {
             return;
         }
 
+        // Fetch users
         const users = await User.findAll({ attributes: ['username'] });
         console.log(`👥 Found ${users.length} users to notify.`);
 
@@ -44,6 +45,7 @@ async function sendReminderEmails() {
             return;
         }
 
+        // Send emails
         for (const user of users) {
             console.log(`📨 Sending emails to ${user.username}...`);
             for (const task of tasks) {
@@ -69,12 +71,16 @@ async function sendReminderEmails() {
     }
 }
 
-// Schedule the job to run at 11 PM every day
+// Schedule the job to run at 11:50 PM every day
 cron.schedule('50 23 * * *', async () => {
-    console.log("⏳ Running scheduled email reminders at 11 PM...");
+    console.log("⏳ Running scheduled email reminders at 11:50 PM...");
     await sendReminderEmails();
+    console.log("✅ Reminder email function executed.");
 });
 
-console.log("✅ Email reminder job scheduled to run every day at 11 PM.");
+// Manually trigger function for debugging
+sendReminderEmails();
+
+console.log("✅ Email reminder job scheduled to run every day at 11:50 PM.");
 
 module.exports = { sendReminderEmails };
