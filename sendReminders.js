@@ -1,7 +1,7 @@
 const cron = require('node-cron');
 const nodemailer = require('nodemailer');
 const { Op, Sequelize } = require('sequelize');
-const ReminderTask = require('./models/ReminderTask'); 
+const ReminderTask = require('./models/ReminderTask');
 const User = require('./models/User');
 const moment = require('moment');
 
@@ -17,9 +17,7 @@ const transporter = nodemailer.createTransport({
 async function sendReminderEmails() {
     try {
         const today = moment().format('YYYY-MM-DD');
-        console.log(`🔍 Checking for tasks due on: ${today}`);
 
-        // Fetch tasks where either reminderStartDate or selectedReminderDates match today
         const tasks = await ReminderTask.findAll({
             where: {
                 [Op.or]: [
@@ -28,6 +26,7 @@ async function sendReminderEmails() {
                 ]
             }
         });
+
 
         console.log(`📌 Found ${tasks.length} tasks for today's reminders.`);
 
