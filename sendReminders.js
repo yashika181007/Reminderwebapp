@@ -1,8 +1,8 @@
 const cron = require('node-cron');
 const nodemailer = require('nodemailer');
+const { Op, Sequelize } = require('sequelize');
 const ReminderTask = require('./models/ReminderTask'); 
 const User = require('./models/User');
-const { Op } = require('sequelize');
 const moment = require('moment');
 
 // Configure Nodemailer
@@ -19,11 +19,12 @@ async function sendReminderEmails() {
         const today = moment().format('YYYY-MM-DD');
         console.log(`🔍 Checking for tasks due on: ${today}`);
 
+        // Fetch tasks where either reminderStartDate or selectedReminderDates match today
         const tasks = await ReminderTask.findAll({
             where: {
                 [Op.or]: [
                     { reminderStartDate: today },
-                    { selectedReminderDates: { [Op.like]: `%${today}%` } }
+                    Sequelize.literal(`JSON_CONTAINS(selectedReminderDates, '"${today}"')`)
                 ]
             }
         });
@@ -68,12 +69,12 @@ async function sendReminderEmails() {
     }
 }
 
-// Schedule the job to run at 11 PM every day
-cron.schedule('0 23 * * *', async () => {
-    console.log("⏳ Running scheduled email reminders at 11 PM...");
+// Schedule the job to run at **11:30 PM daily**
+cron.schedule('30 23 * * *', async () => {
+    console.log("⏳ Running scheduled email reminders at 11:30 PM...");
     await sendReminderEmails();
 });
 
-console.log("✅ Email reminder job scheduled to run every day at 11 PM.");
+console.log("✅ Email reminder job scheduled to run every day at 11:30 PM.");
 
 module.exports = { sendReminderEmails };
